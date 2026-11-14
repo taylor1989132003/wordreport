@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>双语术语卡片 · Bilingual Terminology Flashcards</title>
+<meta name="description" content="基于记忆盒与拼写自测的双语翻译术语学习工具，纯静态、进度保存在本地。">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">译</div>
+    <div class="brand-text">
+      <h1>双语术语卡片</h1>
+      <p>Bilingual Terminology Flashcards</p>
+    </div>
+  </div>
+
+  <nav class="tabs" id="tabs" aria-label="主导航">
+    <button class="tab active" data-view="study">学习</button>
+    <button class="tab" data-view="spell">拼写自测</button>
+    <button class="tab" data-view="library">词库</button>
+    <button class="tab" data-view="data">数据</button>
+  </nav>
+
+  <div class="mastery" title="掌握度 = 熟练与掌握卡片占比（加权）">
+    <span class="mastery-num" id="masteryNum">0%</span>
+    <span class="mastery-label">掌握度</span>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- ================= 学习 ================= -->
+  <section class="view active" id="view-study">
+
+    <div class="boxes" id="boxes" aria-label="记忆盒分组">
+      <button class="box box-0" data-scope="0">
+        <span class="box-name">新词</span>
+        <span class="box-count" data-count="0">0</span>
+        <span class="box-sub">New</span>
+      </button>
+      <button class="box box-1" data-scope="1">
+        <span class="box-name">学习中</span>
+        <span class="box-count" data-count="1">0</span>
+        <span class="box-sub">Learning</span>
+      </button>
+      <button class="box box-2" data-scope="2">
+        <span class="box-name">熟练</span>
+        <span class="box-count" data-count="2">0</span>
+        <span class="box-sub">Familiar</span>
+      </button>
+      <button class="box box-3" data-scope="3">
+        <span class="box-name">掌握</span>
+        <span class="box-count" data-count="3">0</span>
+        <span class="box-sub">Mastered</span>
+      </button>
+    </div>
+
+    <div class="study-toolbar">
+      <span class="scope-note" id="scopeNote">全部卡片</span>
+      <select id="catSelect" class="select" aria-label="按分类筛选">
+        <option value="all">全部分类</option>
+      </select>
+      <button class="chip" id="favOnly" aria-pressed="false">☆ 仅收藏</button>
+      <button class="chip" id="reshuffle">重新抽卡</button>
+      <span class="counter" id="poolCounter"></span>
+    </div>
+
+    <div class="card-stage">
+      <article class="flashcard" id="flashcard" tabindex="0" aria-live="polite">
+        <div class="card-head">
+          <span class="pill box-pill" id="boxPill">新词</span>
+          <span class="pill cat-pill" id="catPill">分类</span>
+          <button class="star" id="starBtn" aria-label="收藏这张卡片" aria-pressed="false">☆</button>
+        </div>
+
+        <div class="card-body">
+          <div class="face front" id="faceFront">
+            <p class="eyebrow">英文术语 · Front</p>
+            <h2 class="term-en" id="cardFront">正在加载…</h2>
+            <p class="hint">点击卡片或按空格查看释义</p>
+          </div>
+
+          <div class="face back" id="faceBack" hidden>
+            <p class="eyebrow">中文释义 · Back</p>
+            <h3 class="term-zh" id="cardTerm"></h3>
+            <p class="pinyin" id="cardPinyin"></p>
+            <p class="definition" id="cardDef"></p>
+            <p class="example" id="cardExample"></p>
+            <div class="tags" id="cardTags"></div>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <div class="rate-row">
+      <button class="btn btn-danger" data-rate="-2">不认识<kbd>1</kbd></button>
+      <button class="btn btn-warn" data-rate="0">模糊<kbd>2</kbd></button>
+      <button class="btn btn-ok" data-rate="1">认识<kbd>3</kbd></button>
+    </div>
+
+    <div class="tool-row">
+      <button class="btn-ghost" id="speakBtn">朗读英文</button>
+      <button class="btn-ghost" id="speakZhBtn">朗读中文</button>
+      <button class="btn-ghost" id="detailBtn">完整释义</button>
+      <button class="btn-ghost" id="flipBtn">显示答案<kbd>空格</kbd></button>
+    </div>
+
+    <p class="footnote">记忆盒规则：认识 → 升一盒（最高「掌握」）；模糊 → 保持当前盒；不认识 → 退回「新词」。</p>
+  </section>
+
+  <!-- ================= 拼写自测 ================= -->
+  <section class="view" id="view-spell">
+    <div class="spell-head">
+      <div>
+        <h2 class="view-title">拼写自测 · Spelling Test</h2>
+        <p class="view-sub">看中文释义，写出对应的英文术语。大小写、空格与标点不计入判定。</p>
+      </div>
+      <div class="spell-stats">
+        <span>正确 <b id="spellRight">0</b></span>
+        <span>错误 <b id="spellWrong">0</b></span>
+        <span>连对 <b id="spellStreak">0</b></span>
+      </div>
+    </div>
+
+    <div class="spell-card">
+      <div class="card-head">
+        <span class="pill box-pill" id="spellBoxPill">新词</span>
+        <span class="pill cat-pill" id="spellCatPill">分类</span>
+      </div>
+      <p class="eyebrow">中文释义 · 请写出英文术语</p>
+      <h3 class="spell-term" id="spellTerm">—</h3>
+      <p class="definition spell-def" id="spellDef"></p>
+
+      <form class="spell-form" id="spellForm" autocomplete="off">
+        <input type="text" id="spellInput" class="spell-input" placeholder="输入英文术语后回车…" spellcheck="false" autocomplete="off" autocapitalize="off">
+        <button type="submit" class="btn btn-primary">检查</button>
+      </form>
+
+      <div class="spell-feedback" id="spellFeedback" hidden></div>
+
+      <div class="spell-actions">
+        <button class="btn-ghost" id="spellHint">提示首字母</button>
+        <button class="btn-ghost" id="spellSpeak">朗读答案</button>
+        <button class="btn-ghost" id="spellSkip">跳过这题</button>
+        <button class="btn-ghost" id="spellNext" hidden>下一题</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 词库 ================= -->
+  <section class="view" id="view-library">
+    <div class="lib-head">
+      <h2 class="view-title">词库 · Library</h2>
+      <p class="view-sub">搜索、筛选并查看全部术语卡片，点击任意一行查看完整释义。</p>
+    </div>
+
+    <div class="lib-toolbar">
+      <input type="search" id="searchInput" class="search" placeholder="搜索英文 / 中文 / 标签 / 释义…">
+      <select id="libCat" class="select" aria-label="按分类筛选">
+        <option value="all">全部分类</option>
+      </select>
+    </div>
+
+    <div class="chips" id="libChips">
+      <button class="chip active" data-box="all">全部</button>
+      <button class="chip" data-box="0">新词</button>
+      <button class="chip" data-box="1">学习中</button>
+      <button class="chip" data-box="2">熟练</button>
+      <button class="chip" data-box="3">掌握</button>
+      <button class="chip" data-box="fav">☆ 收藏</button>
+    </div>
+
+    <p class="lib-count" id="libCount"></p>
+    <div class="lib-list" id="libList"></div>
+  </section>
+
+  <!-- ================= 数据 ================= -->
+  <section class="view" id="view-data">
+    <div class="lib-head">
+      <h2 class="view-title">数据 · Data</h2>
+      <p class="view-sub">所有卡片与学习进度都保存在本机浏览器，不会上传到任何服务器。</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="panel">
+        <h3>导入 CSV</h3>
+        <p class="panel-text">表头需包含 <code>front</code> 与 <code>back</code> 两列：front 为英文术语，back 为中文释义。已存在的英文术语会更新释义，新术语会追加到词库。</p>
+        <label class="file-btn">
+          选择 CSV 文件
+          <input type="file" id="csvInput" accept=".csv,text/csv" hidden>
+        </label>
+        <div class="dropzone" id="dropZone">也可以把 CSV 文件拖到这里</div>
+        <p class="msg" id="importMsg"></p>
+      </div>
+
+      <div class="panel">
+        <h3>导出 CSV</h3>
+        <p class="panel-text">将当前全部卡片导出为 <code>front,back</code> 两列文件，可直接用 Excel 打开，也可导入参考项目 colarusso/flashcards。</p>
+        <button class="btn btn-primary" id="exportBtn">导出全部卡片</button>
+        <p class="msg" id="exportMsg"></p>
+      </div>
+
+      <div class="panel">
+        <h3>进度管理</h3>
+        <p class="panel-text">重置只会清空记忆盒、正确/错误次数与收藏标记，不会删除卡片本身。</p>
+        <button class="btn btn-danger" id="resetBtn">重置全部进度</button>
+        <button class="btn btn-warn" id="resetCustomBtn">删除导入的卡片</button>
+        <p class="msg" id="resetMsg"></p>
+      </div>
+
+      <div class="panel">
+        <h3>数据概览</h3>
+        <table class="stats-table">
+          <tbody>
+            <tr><td>卡片总数</td><td id="statTotal">0</td></tr>
+            <tr><td>新词 / 学习中 / 熟练 / 掌握</td><td id="statBoxes">0 / 0 / 0 / 0</td></tr>
+            <tr><td>已收藏</td><td id="statFav">0</td></tr>
+            <tr><td>累计作答</td><td id="statAnswers">0</td></tr>
+            <tr><td>存储位置</td><td>localStorage</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ================= 详情弹窗 ================= -->
+<div class="modal" id="modal" hidden>
+  <div class="modal-mask" data-close="1"></div>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="mFront">
+    <button class="modal-close" data-close="1" aria-label="关闭">×</button>
+    <div class="modal-head">
+      <span class="pill box-pill" id="mBox">新词</span>
+      <span class="pill cat-pill" id="mCat">分类</span>
+    </div>
+    <h2 class="modal-title" id="mFront">—</h2>
+    <p class="modal-zh" id="mTerm"></p>
+    <p class="pinyin" id="mPinyin"></p>
+
+    <div class="modal-section">
+      <h4>中文释义</h4>
+      <p id="mDef"></p>
+    </div>
+    <div class="modal-section">
+      <h4>English Definition</h4>
+      <p id="mDefEn"></p>
+    </div>
+    <div class="modal-section">
+      <h4>例句 / Example</h4>
+      <p id="mExample"></p>
+      <p class="muted" id="mExampleEn"></p>
+    </div>
+    <div class="modal-section" id="mTagSection">
+      <h4>标签</h4>
+      <div class="tags" id="mTags"></div>
+    </div>
+
+    <div class="modal-foot">
+      <button class="btn-ghost" id="mSpeakEn">朗读英文</button>
+      <button class="btn-ghost" id="mSpeakZh">朗读中文</button>
+      <button class="btn-ghost" id="mStar">☆ 收藏</button>
+      <button class="btn btn-primary" id="mPractice">在卡片中练习</button>
+    </div>
+    <p class="muted small" id="mStats"></p>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="data/terms.js"></script>
+<script src="js/store.js"></script>
+<script src="js/csv.js"></script>
+<script src="js/speech.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
